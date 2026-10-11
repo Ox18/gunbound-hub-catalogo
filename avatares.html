@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo de avatares</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&family=Lilita+One&family=Nunito:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="site-nav"><div class="in">
+  <a class="brand" href="index.html">GunBound · DragonBound</a>
+  <a class="tab" href="index.html">Inicio</a>
+  <a class="tab" href="funcionalidades.html">Funcionalidades</a>
+  <a class="tab" id="nav-gb" href="avatares.html?juego=gb">Avatares GunBound</a>
+  <a class="tab" id="nav-db" href="avatares.html?juego=db">Avatares DragonBound</a>
+</div></nav>
+
+<main>
+  <div class="sec"><h2 id="title">Avatares</h2></div>
+
+  <div class="tools">
+    <span class="seg" role="group" aria-label="Juego">
+      <button type="button" data-game="gb">GunBound</button>
+      <button type="button" data-game="db">DragonBound</button>
+    </span>
+    <input type="search" id="q" placeholder="Buscar por ID, nombre o conjunto">
+    <select id="gender" aria-label="Género">
+      <option value="">Todos los géneros</option>
+      <option value="m">Chico</option>
+      <option value="f">Chica</option>
+      <option value="a">Unisex</option>
+    </select>
+    <select id="shop" aria-label="Tienda">
+      <option value="">Tienda y exclusivos</option>
+      <option value="1">Solo de tienda</option>
+      <option value="0">Solo exclusivos</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="chips-types" id="types"></div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>No hay avatares con esos filtros.</div>
+  <button type="button" class="more" id="more" hidden>Ver más</button>
+</main>
+
+<footer>Cada carta es el primer cuadro del sprite del avatar.</footer>
+
+<script src="data/avatars-gb.js"></script>
+<script src="data/avatars-db.js"></script>
+<script>
+// Cada avatar: [id, tipo, género, nombre, conjunto, tienda (1/0/null), archivo]
+const TYPES = { h: "Cabeza", b: "Cuerpo", g: "Gafas", f: "Bandera", 1: "Fondo", 2: "Primer plano", x: "Accesorio" };
+// Las claves numéricas de un objeto se ordenan antes que las demás: el orden va aparte.
+const TYPE_ORDER = ["h", "b", "g", "f", "1", "2", "x"];
+const rank = (t) => TYPE_ORDER.indexOf(t);
+const GENDER = { m: "Chico", f: "Chica", a: "Unisex" };
+const GAMES = {
+  gb: { name: "GunBound", data: window.AVATARS_GB || [], dir: "avatars/gb/" },
+  db: { name: "DragonBound", data: window.AVATARS_DB || [], dir: "avatars/db/" },
+};
+// Por tipo (cabezas primero) y dentro de cada tipo por ID.
+Object.values(GAMES).forEach((g) => g.data.sort((a, b) => rank(a[1]) - rank(b[1]) || Number(a[0]) - Number(b[0])));
+const PAGE = 240;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+const params = new URLSearchParams(location.search);
+const state = { game: GAMES[params.get("juego")] ? params.get("juego") : "gb", type: "", shown: 0, list: [] };
+
+function card(a, dir) {
+  const [id, , g, name, set, shop, file] = a;
+  let chips = `<span class="c${g === "f" ? " f" : ""}">${GENDER[g] || "Unisex"}</span>`;
+  if (shop !== null && shop !== undefined) chips += `<span class="c g">${shop ? "Tienda" : "Exclusivo"}</span>`;
+  return `<div class="ava"><div class="th"><img loading="lazy" src="${dir}${esc(file)}.webp" alt="${esc(name || "Avatar " + id)}"></div>`
+    + `<span class="id">ID ${esc(id)}</span>`
+    + (name ? `<div class="nm">${esc(name)}</div>` : "")
+    + (set ? `<div class="st" title="${esc(set)}">${esc(set)}</div>` : "")
+    + `<div class="ch">${chips}</div></div>`;
+}
+
+function renderTypes() {
+  const data = GAMES[state.game].data;
+  const counts = {};
+  data.forEach((a) => (counts[a[1]] = (counts[a[1]] || 0) + 1));
+  const btn = (t, label, n) => `<button type="button" data-type="${t}" class="${state.type === t ? "on" : ""}">${label} (${n.toLocaleString("es")})</button>`;
+  $("types").innerHTML = btn("", "Todos", data.length)
+    + TYPE_ORDER.filter((t) => counts[t]).map((t) => btn(t, TYPES[t], counts[t])).join("");
+}
+
+function apply() {
+  const g = GAMES[state.game];
+  const q = $("q").value.trim().toLowerCase();
+  const gender = $("gender").value, shop = $("shop").value;
+  state.list = g.data.filter((a) =>
+    (!state.type || a[1] === state.type) &&
+    (!gender || a[2] === gender) &&
+    (!shop || String(a[5]) === shop) &&
+    (!q || a[0].includes(q) || a[3].toLowerCase().includes(q) || a[4].toLowerCase().includes(q) || a[6].toLowerCase().includes(q)));
+  state.shown = 0;
+  $("grid").innerHTML = "";
+  more();
+}
+
+function more() {
+  const g = GAMES[state.game];
+  const next = state.list.slice(state.shown, state.shown + PAGE);
+  $("grid").insertAdjacentHTML("beforeend", next.map((a) => card(a, g.dir)).join(""));
+  state.shown += next.length;
+  $("count").textContent = `${state.list.length.toLocaleString("es")} avatares`;
+  $("empty").hidden = state.list.length > 0;
+  $("more").hidden = state.shown >= state.list.length;
+  $("more").textContent = `Ver más (${(state.list.length - state.shown).toLocaleString("es")} restantes)`;
+}
+
+function setGame(game) {
+  state.game = game;
+  state.type = "";
+  history.replaceState(null, "", `?juego=${game}`);
+  const g = GAMES[game];
+  document.title = `Avatares de ${g.name}`;
+  $("title").textContent = `Avatares de ${g.name}`;
+  document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b.dataset.game === game));
+  $("nav-gb").classList.toggle("on", game === "gb");
+  $("nav-db").classList.toggle("on", game === "db");
+  // GunBound no trae nombre ni tienda: el filtro de tienda solo aplica a DragonBound.
+  $("shop").hidden = game === "gb";
+  if (game === "gb") $("shop").value = "";
+  renderTypes();
+  apply();
+}
+
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => setGame(b.dataset.game)));
+$("types").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-type]");
+  if (!b) return;
+  state.type = b.dataset.type;
+  renderTypes();
+  apply();
+});
+let timer;
+$("q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(apply, 150); });
+$("gender").addEventListener("change", apply);
+$("shop").addEventListener("change", apply);
+$("more").addEventListener("click", more);
+// Carga sola al acercarse al final de la lista.
+new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !$("more").hidden) more();
+}, { rootMargin: "600px" }).observe($("more"));
+
+setGame(state.game);
+</script>
+</body>
+</html>
