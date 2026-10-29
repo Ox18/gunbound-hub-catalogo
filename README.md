@@ -19,6 +19,10 @@ Lee los sprites de `~/gunbound/gis/png`, `~/gunbound/dragonbound/.../images/ava`
 `data/src/` (copia de lo que el agente dejó en su carpeta temporal: `db_avatars.json`, `ava_dl/`,
 `catalogo-a4.html` y su `avatares_pdf.py`).
 
+Los nombres de GunBound salen de `data/src/gb_names.json` (sprite → `Menu_Name` de la tabla `menu` del servidor
+GunBound 894, la misma que usó DBMafia para sus avatares `_gb`). Los fondos y primeros planos (`b…`/`f…`) no están en
+esa tabla y quedan sin nombre: 8.157 de 8.619 tienen nombre.
+
 `funcionalidades.html` es `data/src/catalogo-a4.html` envuelto en un documento completo con la barra de navegación
 y una corrección: el visor de imágenes (`#viewer`) quedaba siempre abierto porque su `display: grid` le ganaba
 al atributo `hidden`.

@@ -124,7 +124,7 @@ function setGame(game) {
   document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b.dataset.game === game));
   $("nav-gb").classList.toggle("on", game === "gb");
   $("nav-db").classList.toggle("on", game === "db");
-  // GunBound no trae nombre ni tienda: el filtro de tienda solo aplica a DragonBound.
+  // GunBound no trae tienda (el nombre sí, de la tabla `menu`): el filtro de tienda solo aplica a DragonBound.
   $("shop").hidden = game === "gb";
   if (game === "gb") $("shop").value = "";
   renderTypes();
