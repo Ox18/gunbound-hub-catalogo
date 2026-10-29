@@ -17,6 +17,9 @@ LOCAL_AVA = "/Users/x/gunbound/dragonbound/src/web/public_html/data/images/ava/"
 HUB_AVA = "/Users/x/Documents/www-dragonbound-hack/se-business-dragonbound-hub/app/storage/avatars/"
 GIS_PNG = "/Users/x/gunbound/gis/png/"
 FRAMES_JSON = "/Users/x/gunbound/data/avatars.json"
+# Nombre de cada sprite de GunBound, de la tabla `menu` del servidor GunBound 894 (ImgShop "s<sprite>").
+# Lo genera el proyecto avatares-gunbound de DBMafia (misma fila elegida que para su data.js).
+GB_NAMES_JSON = os.path.join(SRC, "gb_names.json")
 THUMB = 96
 
 
@@ -108,6 +111,7 @@ def build_gb():
         return (m.group(1), int(m.group(2)), m.group(3)) if m else (n, 0, "")
 
     names = sorted((n[:-4] for n in os.listdir(GIS_PNG) if n.endswith(".png")), key=order)
+    gb_names = json.load(open(GB_NAMES_JSON))
     items, skipped = [], 0
     for n in names:
         m = re.fullmatch(r"(mh|fh|mb|fb|mg|fg|mf|ff|b|f)(\d{5,6})", n)
@@ -119,7 +123,7 @@ def build_gb():
         except Exception:
             skipped += 1
             continue
-        items.append([m.group(2), t, g, "", "", None, n])
+        items.append([m.group(2), t, g, gb_names.get(n, ""), "", None, n])
     return items, skipped
 
 
